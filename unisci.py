@@ -7,7 +7,6 @@ from scipy import signal,io,fftpack
 import matplotlib.pyplot as plt
 from obspy import signal, sac
 import datetime as dt
-#from memory_profiler import profile
 
 # read_gyro_file(ora, data_folder)
 # legge i file .DAT generati dal giroscopio e li inserisce all' interno di due vettori: header ad 1 Hertz e data a 5 KHertz
@@ -46,7 +45,7 @@ def read_gyro_file(ora, data_folder):
 			i+=1
 	return header, data, start
 
-#@profile
+
 def decimate_gyro_data(data, low = 110, high = 200, corners = 2, zerophase = True, cal = 632.8e-9/1.35/2/np.pi ):
 	sagn100 = scipy.signal.decimate( data[0][:], 50 )
 	Y_hilbert = scipy.signal.hilbert(ob.signal.filter.bandpass( data[0][:], low, high, 5000, corners = corners, zerophase = zerophase ))
@@ -59,12 +58,12 @@ def decimate_gyro_data(data, low = 110, high = 200, corners = 2, zerophase = Tru
 	data100 = np.vstack((sagn100, speed100, cw100, ccw100))
 	return data100 # ritorno i dati a 100 Hertz
 
-#@profile
+
 def generate_sac(start, stop, data_folder, file_name ,extra_points=1000):
 	speed_trace = sac.SacIO() # inizializzo un oggetto sac
-	ora = start - dt.timedelta(hours = 1) 
+	ora = start - dt.timedelta(seconds = extra_points/5000 ) 
 	header,data,start_data = read_gyro_file(ora, data_folder)
-	diff_data_seconds=(start-start_data).seconds
+	diff_data_seconds = (start-start_data).seconds
 	ora = ora + dt.timedelta(hours = 1)
 	speed100 = decimate_gyro_data(data)[1]
 	speed100 = np.delete(speed100, range(0, diff_data_seconds*100) ) # rimuovi punti fino a start
@@ -86,14 +85,14 @@ def generate_sac(start, stop, data_folder, file_name ,extra_points=1000):
 	return True
 
 
-ora = dt.datetime(year = 2013, month = 2, day = 16, hour = 9)
-data_folder = "/home/matteo/Tesi/glaser-data/"
+#ora = dt.datetime(year = 2013, month = 2, day = 16, hour = 9)
+data_folder = "/home/matteo/Tesi-data/glaser-data/"
 file_name = "test_speed-3.SAC"
 #header,data,start = read_gyro_file(ora, data_folder)
 #data100 = decimate_gyro_data(data)
 
 start = dt.datetime(day = 16, month = 2, year = 2013, hour = 1, minute = 48, second = 0 )
-stop = dt.datetime(day = 16, month = 2, year = 2013, hour =1 , minute = 58, second = 59 )
+stop = dt.datetime(day = 16, month = 2, year = 2013, hour =3 , minute = 58, second = 59 )
 
 generate_sac(start, stop, data_folder, file_name)
 #fsagnac=np.transpose(header)[27]
