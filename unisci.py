@@ -1,10 +1,10 @@
+#! /usr/bin/python
 
 import os
 import obspy as ob
 import numpy as np
 import scipy
 from scipy import signal,io,fftpack
-import matplotlib.pyplot as plt
 from obspy import signal, sac
 import datetime as dt
 
@@ -46,9 +46,14 @@ def read_gyro_file(ora, data_folder):
 	return header, data, start
 
 
-def decimate_gyro_data(data, low = 110, high = 200, corners = 2, zerophase = True, cal = 632.8e-9/1.35/2/np.pi ):
+def decimate_gyro_data(data, low = 110, high = 200, corners = 1, zerophase = True, cal = 632.8e-9/1.35/2.0/np.pi ):
 	sagn100 = scipy.signal.decimate( data[0][:], 50 )
-	Y_hilbert = scipy.signal.hilbert(ob.signal.filter.bandpass( data[0][:], low, high, 5000, corners = corners, zerophase = zerophase ))
+	#a = 
+	#b =
+	#firstpass = lfilter(b, a, data)
+    #filtered_data = lfilter(b, a, firstpass[::-1])[::-1]
+	filtered_data = ob.signal.filter.bandpass( data[0][:], low, high, 5000, corners = corners, zerophase = zerophase)
+	Y_hilbert = scipy.signal.hilbert(filtered_data)
 	# filtro passa banda e trasformata di hilbert
 	PHI = np.unwrap(np.angle(Y_hilbert)) # calcolo della fase
 	speed = np.gradient(PHI)*5000*cal # calcolo della velocita' in rad/s
@@ -58,15 +63,19 @@ def decimate_gyro_data(data, low = 110, high = 200, corners = 2, zerophase = Tru
 	data100 = np.vstack((sagn100, speed100, cw100, ccw100))
 	return data100 # ritorno i dati a 100 Hertz
 
-
 def generate_sac(start, stop, data_folder, file_name ,extra_points=1000):
 	speed_trace = sac.SacIO() # inizializzo un oggetto sac
-	ora = start - dt.timedelta(seconds = extra_points/5000 ) 
+	start = start + dt.timedelta(seconds = 33)
+	stop = stop + dt.timedelta(seconds = 33)
+	ora = start - dt.timedelta(hours = 1) 
 	header,data,start_data = read_gyro_file(ora, data_folder)
 	diff_data_seconds = (start-start_data).seconds
+	print diff_data_seconds
 	ora = ora + dt.timedelta(hours = 1)
 	speed100 = decimate_gyro_data(data)[1]
+	print speed100.shape[0]
 	speed100 = np.delete(speed100, range(0, diff_data_seconds*100) ) # rimuovi punti fino a start
+	print speed100.shape[0]
 	data_buffer = data[:, -extra_points:]
 	while stop > start_data + dt.timedelta(hours = 1):
 		header1,data1,start_data = read_gyro_file(ora, data_folder)
@@ -78,21 +87,29 @@ def generate_sac(start, stop, data_folder, file_name ,extra_points=1000):
 		data_buffer = data1[:, -extra_points:]
 	diff_data_seconds = (start_data + dt.timedelta(hours = 1) - stop).seconds
 	speed100 = np.delete(speed100, range(speed100.shape[0] - diff_data_seconds*100, speed100.shape[0]) ) # rimuovi punti prima di stop
-	speed_trace.fromarray(speed100, starttime=ob.UTCDateTime(start)) # genero un traccia dall'array delle velocita'
+	print speed100.shape[0]
+	speed_trace.fromarray(speed100, starttime=ob.UTCDateTime(start - dt.timedelta(seconds = 33))) # genero un traccia dall'array delle velocita'
 	speed_trace.SetHvalue('kinst', 'G-Laser Pisa')
 	speed_trace.SetHvalue('delta', 0.01)
 	speed_trace.WriteSacBinary(file_name)
 	return True
 
+def generate_raw_sac(speed100, start, file_name ):
+	speed_trace = sac.SacIO() # inizializzo un oggetto sac
+	speed_trace.fromarray(speed100, starttime=ob.UTCDateTime(start)) # genero un traccia dall'array delle velocita'
+	speed_trace.SetHvalue('kinst', 'G-Laser Pisa')
+	speed_trace.SetHvalue('delta', 0.01)
+	speed_trace.WriteSacBinary(file_name)	
 
-#ora = dt.datetime(year = 2013, month = 2, day = 16, hour = 9)
+ora = dt.datetime(year = 2013, month = 2, day = 16, hour = 22)
 data_folder = "/home/matteo/Tesi-data/glaser-data/"
-file_name = "test_speed-3.SAC"
+file_name = "16feb21-23.SAC"
 #header,data,start = read_gyro_file(ora, data_folder)
 #data100 = decimate_gyro_data(data)
+#generate_raw_sac(data100[1], start, file_name )
 
-start = dt.datetime(day = 16, month = 2, year = 2013, hour = 1, minute = 48, second = 0 )
-stop = dt.datetime(day = 16, month = 2, year = 2013, hour =3 , minute = 58, second = 59 )
+start = dt.datetime(day = 16, month = 2, year = 2013, hour = 21, minute = 0, second = 0 )
+stop = dt.datetime(day = 16, month = 2, year = 2013, hour =23 , minute = 0, second = 0)
 
 generate_sac(start, stop, data_folder, file_name)
 #fsagnac=np.transpose(header)[27]
