@@ -10,15 +10,15 @@ import datetime as dt
 
 ora = dt.datetime(year = 2013, month = 2, day = 16, hour = 22)
 data_folder = "/home/matteo/Tesi-data/glaser-data/"
-file_name = "16feb21-23.SAC"
+file_name = "4feb21-23.SAC"
 #header,data,start = read_gyro_file(ora, data_folder)
 #data100 = decimate_gyro_data(data)
 #generate_raw_sac(data100[1], start, file_name )
 
-start = dt.datetime(day = 16, month = 2, year = 2013, hour = 21, minute = 0, second = 0 )
-stop = dt.datetime(day = 16, month = 2, year = 2013, hour =23 , minute = 0, second = 0)
+start = dt.datetime(day = 4, month = 3, year = 2013, hour = 21, minute = 0, second = 0 )
+stop = dt.datetime(day = 4, month = 3, year = 2013, hour =23 , minute = 0, second = 0)
 
-generate_sac(start, stop, data_folder, file_name)
+generate_sac(start, stop, data_folder)
 #fsagnac=np.transpose(header)[27]
 
 #plt.figure()
