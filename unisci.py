@@ -26,16 +26,16 @@ def read_gyro_file(ora, data_folder):
 	header = np.zeros([3600, header_lenght], dtype = np.float32) # inizializzo il vettore header
 	data = np.zeros([N_channel, 3600 * channel_lenght], dtype = np.float32) # inizializzo il vettore data
 	data_lenght = header_lenght + N_channel * channel_lenght # calcolo la lunghezza di un secondo di dati
-	start = dt.datetime(
-			year = raw_data[17],
-			month = raw_data[16],
-			day = raw_data[15],
-			hour = raw_data[14],
-			minute = 0,
-			second = 0,
+	start_trace = dt.datetime(
+			year = raw_data[10],
+			month = raw_data[9],
+			day = raw_data[8],
+			hour = raw_data[7],
+			minute = raw_data[6],
+			second = raw_data[5],
 			)
-	print 'start:', start," - stop:", start + dt.timedelta(hours = 1)
-	# il punto iniziale del file ha esattamento lo stesso secondo e minuto dell'inizio della trace
+	if (start_trace-ora).seconds>0:
+		print "il file contiene l'inizio della traccia pertanto potrebbero esserci degli artefatti"
 	for j in range(N_seconds):
 		sample = raw_data[ j * data_lenght : j * data_lenght + header_lenght ][47] # secondo che sto campionando
 		header[sample][:] = raw_data[ j * data_lenght : j * data_lenght + header_lenght ]
@@ -44,7 +44,7 @@ def read_gyro_file(ora, data_folder):
 		for k in range(4):
 			data[k][(sample) * channel_lenght : (sample+1) * channel_lenght ] = raw_data[ start_data + i * channel_lenght :  start_data + (i+1) * channel_lenght]
 			i+=1
-	return header, data, start
+	return header, data, ora
 
 
 def decimate_gyro_data(data, low = 110, high = 200, corners = 1, zerophase = True, cal = 632.8e-9/1.35/2.0/np.pi ):
@@ -62,8 +62,6 @@ def decimate_gyro_data(data, low = 110, high = 200, corners = 1, zerophase = Tru
 
 def generate_sac(start, stop, data_folder, file_name='default' ,extra_points=1000):
 	speed_trace = sac.SacIO() # inizializzo un oggetto sac
-	start = start + dt.timedelta(seconds = 33)
-	stop = stop + dt.timedelta(seconds = 33)
 	ora = start - dt.timedelta(hours = 1) 
 	header,data,start_data = read_gyro_file(ora, data_folder)
 	diff_data_seconds = (start-start_data).seconds
@@ -81,8 +79,6 @@ def generate_sac(start, stop, data_folder, file_name='default' ,extra_points=100
 		data_buffer = data1[:, -extra_points:]
 	diff_data_seconds = (start_data + dt.timedelta(hours = 1) - stop).seconds
 	speed100 = np.delete(speed100, range(speed100.shape[0] - diff_data_seconds*100, speed100.shape[0]) ) # rimuovi punti prima di stop
-	start = start - dt.timedelta(seconds = 33)
-	stop = stop - dt.timedelta(seconds = 33)
 	speed_trace.fromarray(speed100, starttime=ob.UTCDateTime(start)) # genero un traccia dall'array delle velocita'
 	speed_trace.SetHvalue('kinst', 'G-Laser Pisa')
 	speed_trace.SetHvalue('delta', 0.01)
@@ -93,7 +89,6 @@ def generate_sac(start, stop, data_folder, file_name='default' ,extra_points=100
 	return True
 
 def generate_raw_sac(speed100, start, file_name='default' ):
-	start = start - dt.timedelta(seconds = 33)
 	speed_trace = sac.SacIO() # inizializzo un oggetto sac
 	speed_trace.fromarray(speed100, starttime=ob.UTCDateTime(start)) # genero un traccia dall'array delle velocita'
 	speed_trace.SetHvalue('kinst', 'G-Laser Pisa')
