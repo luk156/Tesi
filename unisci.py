@@ -44,7 +44,7 @@ def read_gyro_file(ora, data_folder):
 		for k in range(4):
 			data[k][(sample) * channel_lenght : (sample+1) * channel_lenght ] = raw_data[ start_data + i * channel_lenght :  start_data + (i+1) * channel_lenght]
 			i+=1
-	return header, data, ora
+	return header, data, ora - dt.timedelta(seconds=33)
 
 
 def decimate_gyro_data(data, low = 110, high = 200, corners = 1, zerophase = True, cal = 632.8e-9/1.35/2.0/np.pi ):
@@ -62,7 +62,7 @@ def decimate_gyro_data(data, low = 110, high = 200, corners = 1, zerophase = Tru
 
 def generate_sac(start, stop, data_folder, file_name='default' ,extra_points=1000):
 	speed_trace = sac.SacIO() # inizializzo un oggetto sac
-	ora = start - dt.timedelta(hours = 1) 
+	ora = start - dt.timedelta(hours = 1, seconds=33) 
 	header,data,start_data = read_gyro_file(ora, data_folder)
 	diff_data_seconds = (start-start_data).seconds
 	ora = ora + dt.timedelta(hours = 1)
@@ -79,7 +79,7 @@ def generate_sac(start, stop, data_folder, file_name='default' ,extra_points=100
 		data_buffer = data1[:, -extra_points:]
 	diff_data_seconds = (start_data + dt.timedelta(hours = 1) - stop).seconds
 	speed100 = np.delete(speed100, range(speed100.shape[0] - diff_data_seconds*100, speed100.shape[0]) ) # rimuovi punti prima di stop
-	speed_trace.fromarray(speed100, starttime=ob.UTCDateTime(start)) # genero un traccia dall'array delle velocita'
+	speed_trace.fromarray(speed100, starttime=ob.UTCDateTime(start)) # genero una traccia dall'array delle velocita'
 	speed_trace.SetHvalue('kinst', 'G-Laser Pisa')
 	speed_trace.SetHvalue('delta', 0.01)
 	if file_name=="default":
@@ -95,6 +95,7 @@ def generate_raw_sac(speed100, start, file_name='default' ):
 	speed_trace.SetHvalue('delta', 0.01)
 	if file_name=="default":
 		file_name="G-Laser-"+str(start.year)+"_"+str(start.month)+"_"+str(start.day)+"-"+str(start.hour)+".SAC"
-	speed_trace.WriteSacBinary(file_name)	
+	speed_trace.WriteSacBinary(file_name)
+	print "creato il file:", file_name
 
 

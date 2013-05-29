@@ -1,0 +1,29 @@
+Dati acquisiti da Streckeisen STS-2 120s 
+su Reftek RT130-24bit a S.Piero a Grado-
+
+Periodo 14feb - 11Mar 2013
+
+Files SAC little-endian giornalieri
+
+I dati originali (100 sps) sono stati low-pass filtered
+a 20 Hz con butterworth 2 poli, 2 passi
+e poi ricampionati a 50Hz.
+
+Dati in COUNTS !
+
+Per ottenere ground velocity:
+
+moltiplicare per 1.5896E-6  V/counts 	(recorder LSB)
+dividere per 1500 V/m/s			(sensor sensitivity)
+
+Risposta strumentaledel sismometro:
+
+2 zeri all'origine
+
+2 poli:
+-0.037+i0.037
+-0.037-i0.037
+
+
+25 marzo 2013
+G.Saccorotti
