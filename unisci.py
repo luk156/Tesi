@@ -63,13 +63,13 @@ def decimate_gyro_data(sagnac, low = 110, high = 200, corners = 1, zerophase = T
 
 def generate_sac(start, stop, data_folder, destination_folder="./", file_name='default' ,extra_points=1000, channel_array = np.array([5000,5000,5000,5000]), sagnac_index = 1):
 	speed_trace = sac.SacIO() # inizializzo un oggetto sac
-	ora = start - dt.timedelta(seconds=33+extra_points/2500) 
+	ora = start - dt.timedelta(seconds=33+extra_points/5000) # ora l'indice dei tempi, lo sposto indietro di 33 secondi per via dell'offset e del buffer
 	header,data,start_data = read_gyro_file(ora, data_folder, channel_array = channel_array )
-	diff_data_seconds = (start-start_data).seconds
-	ora = ora + dt.timedelta(hours = 1)
-	speed100 = decimate_gyro_data( data[sagnac_index] )
+	diff_data_seconds = (start-start_data).seconds # calcolo i secondi da rimuovere
+	ora = ora + dt.timedelta(hours = 1) # sposto l'indice dei tempi avanti di un' ora
+	speed100 = decimate_gyro_data( data[sagnac_index] ) # eleboro il sagnac ed ottengo la velocita' a 100 Hz
 	speed100 = np.delete( speed100, range(0, diff_data_seconds*100) ) # rimuovi punti fino a start
-	data_buffer = data[sagnac_index][-extra_points:]
+	data_buffer = data[sagnac_index][-extra_points:] # salvo in un buffer gli ultimi extra_points
 	while stop > start_data + dt.timedelta(hours = 1):
 		header1,data1,start_data = read_gyro_file(ora, data_folder,  channel_array = channel_array )
 		data1 = np.append( data_buffer, data1[sagnac_index])
