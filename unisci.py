@@ -88,7 +88,7 @@ def generate_sac(start, stop, data_folder, destination_folder="./", file_name='d
 	print "writing ", file_name
 	os.chdir(destination_folder)
 	speed_trace.WriteSacBinary(file_name)
-	return file_name
+	return destination_folder+str(file_name)
 
 def generate_raw_sac(speed100, start, destination_folder="./", file_name='default' ):
 	speed_trace = sac.SacIO() # inizializzo un oggetto sac
@@ -100,7 +100,7 @@ def generate_raw_sac(speed100, start, destination_folder="./", file_name='defaul
 	os.chdir(destination_folder)
 	speed_trace.WriteSacBinary(file_name)
 	print "creato il file:", file_name
-	return file_name
+	return destination_folder+str(file_name)
 
 
 
