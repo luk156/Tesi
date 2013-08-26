@@ -37,3 +37,8 @@ nosetests.xml
 *.SAC
 *.sac
 *.png
+
+Tesi-data/
+direzione_arrivo*
+SPIERO.tgz
+
