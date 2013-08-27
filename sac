@@ -1,0 +1,6 @@
+A SAC formatted data file generally contains a single, contiguous segment of time-series data structured as a header section followed by floating point data values.  The SAC file format can be either binary or alphanumeric (ASCII).  The binary variant can be in either big or little endian byte order; many, but not all, SAC readers will automatically detect the byte order of binary data files and swap input data as needed.
+
+A SAC header contains details required for the identification (network, station, location, channel) and interpretation (start time, sample rate, sample count, etc.) of the time series in addition to fields for storing the coordinates of the station and optionally the event.  Two fields exist to describe a scaling factor and units of the resulting time series, beyond that there is usually no further instrument response information included.
+
+All data samples in SAC are stored as floating point values, in the binary format they are 32-bit IEEE floats.  There is no standard way to denote a gap in the time series represented in a SAC file, multiple segments of a time series are generally represented using multiple SAC files.
+

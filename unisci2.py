@@ -58,7 +58,7 @@ def read_gyro_file(ora, data_folder, header_lenght =202, channel_array = np.arra
     return header, data, start_data, found
 
 
-def decimate_gyro_data(sagnac, low = 100, high = 2500, corners = 1, zerophase = True, cal = 632.8e-9/1.35/2.0/np.pi ):
+def decimate_gyro_data(sagnac, low = 100, high = 5000, corners = 1, zerophase = True, cal = 632.8e-9/1.35/2.0/np.pi ):
     filtered_data = ob.signal.filter.bandpass( sagnac, low, high, 5000, corners = corners, zerophase = zerophase)
     Y_hilbert = scipy.signal.hilbert(filtered_data)
     # filtro passa banda e trasformata di hilbert
@@ -67,9 +67,7 @@ def decimate_gyro_data(sagnac, low = 100, high = 2500, corners = 1, zerophase = 
     speed100 = scipy.signal.decimate( speed, 50 )
     return speed100 # ritorno la velocita' a 100 Hertz
 
-header_dict={'temp': 43, 'tiltX': 20, 'tiltY': 21}
-
-def generate_sac(start, stop, data_folder, destination_folder="./", file_name='default' , extra_points=0, channel_array = np.array([5000,5000,5000,5000]), sagnac_index = 0, header_sac = header_dict):
+def generate_sac(start, stop, data_folder, destination_folder="./", file_name='default' ,extra_points=1000, channel_array = np.array([5000,5000,5000,5000]), sagnac_index = 0):
     speed_trace = sac.SacIO() # inizializzo un oggetto sac
     ora = start - dt.timedelta(extra_points/5000) + dt.timedelta(seconds=33) #ora rappresente l'indice dei tempi, lo sposto indietro per creare un buffer
     header,data,start_data, found = read_gyro_file(ora , data_folder, channel_array = channel_array )
@@ -77,26 +75,19 @@ def generate_sac(start, stop, data_folder, destination_folder="./", file_name='d
     ora = ora + dt.timedelta(hours = 1) # sposto l'indice dei tempi avanti di un' ora
     if found: #se il file dell'ora esiste
         speed100 = decimate_gyro_data( data[sagnac_index] ) # elaboro il sagnac ed ottengo la velocita' a 100 Hz
-        if extra_points>0:
-            data_buffer = data[sagnac_index][-extra_points:] # salvo in un buffer gli ultimi extra_points
-        else:
-            data_buffer = np.zeros(0)
+        data_buffer = data[sagnac_index][-extra_points:] # salvo in un buffer gli ultimi extra_points
     else: # se il file non esiste il vettore data e' composto da soli 0
         speed100 = scipy.signal.decimate( data[sagnac_index], 50 ) # se non e' stato trovato il file decimo e basta
         data_buffer = np.zeros(extra_points) # creo un buffer di zeri
     speed100 = np.delete( speed100, range(0, diff_data_seconds*100) ) # rimuovi punti fino a start
-    header = np.delete( header, range(0, diff_data_seconds ) , axis=0)
+
     while stop > start_data + dt.timedelta(hours = 1): # ripeto l'operazione fino a stop
         header1,data1,start_data,found = read_gyro_file(ora, data_folder,  channel_array = channel_array )
         data1 = np.append( data_buffer, data1[sagnac_index])
-        header = np.append( header , header1, axis=0)
         ora = ora + dt.timedelta(hours = 1)
         if found:
             speed100_1 = decimate_gyro_data( data1 )
-            if extra_points>0:
-                data_buffer = data1[-extra_points:]
-            else:
-                data_buffer = np.zeros(0)
+            data_buffer = data1[-extra_points:]
             speed100_1 = np.delete(speed100_1, range(0, extra_points/50) )
         else:
             speed100_1 = scipy.signal.decimate( data1, 50 ) # se non e' stato trovato il file decimo e basta
@@ -104,32 +95,20 @@ def generate_sac(start, stop, data_folder, destination_folder="./", file_name='d
         speed100 = np.append(speed100, speed100_1)
     diff_data_seconds = (start_data + dt.timedelta(hours = 1) - stop).seconds
     speed100 = np.delete(speed100, range(speed100.shape[0] - diff_data_seconds*100, speed100.shape[0]) ) # rimuovi punti prima di stop
-    header = np.delete(header, range(header.shape[0] - diff_data_seconds, header.shape[0]), axis=0)
     speed_trace.fromarray(speed100, starttime=ob.UTCDateTime(start)) # genero una traccia dall'array delle velocita'
     speed_trace.SetHvalue('kinst', 'G-Laser Pisa')
-    speed_trace.SetHvalue('kcmpnm', 'Rotation Rate')
     speed_trace.SetHvalue('delta', 0.01)
     if file_name=="default":
-        file_name="G-Laser-"+str(start.year)+"_"+str(start.month)+"_"+str(start.day)+"-"+str(start.hour)+":"+str(start.minute)+"_"+str(stop.month)+"_"+str(stop.day)+"-"+str(stop.hour)+":"+str(stop.minute)
-    print "writing ", file_name+"-speed"+".SAC"
+        file_name="G-Laser-"+str(start.year)+"_"+str(start.month)+"_"+str(start.day)+"-"+str(start.hour)+":"+str(start.minute)+"_"+str(stop.month)+"_"+str(stop.day)+"-"+str(stop.hour)+":"+str(stop.minute)+".SAC"
+    print "writing ", file_name
     os.chdir(destination_folder)
-    speed_trace.WriteSacBinary(file_name+".SAC")
-    for h in header_sac:
-        h_trace = sac.SacIO()
-        print header.shape
-        h_trace.fromarray(header.T[ header_sac[ h ] ][:], starttime=ob.UTCDateTime(start))
-        h_trace.SetHvalue('delta', 1)
-        h_trace.SetHvalue('kinst', 'G-Laser Pisa')
-        h_trace.SetHvalue('kcmpnm', h)
-        print "writing ", file_name+"-"+h+".SAC"
-        h_trace.WriteSacBinary(file_name+"-"+h+".SAC")
-    return destination_folder+str(file_name+".SAC")
+    speed_trace.WriteSacBinary(file_name)
+    return destination_folder+str(file_name)
 
 def generate_raw_sac(speed100, start, destination_folder="./", file_name='default' ):
     speed_trace = sac.SacIO() # inizializzo un oggetto sac
     speed_trace.fromarray(speed100, starttime=ob.UTCDateTime(start)) # genero un traccia dall'array delle velocita'
     speed_trace.SetHvalue('kinst', 'G-Laser Pisa')
-
     speed_trace.SetHvalue('delta', 0.01)
     if file_name=="default":
         file_name="G-Laser-"+str(start.year)+"_"+str(start.month)+"_"+str(start.day)+"-"+str(start.hour)+".SAC"
@@ -137,6 +116,3 @@ def generate_raw_sac(speed100, start, destination_folder="./", file_name='defaul
     speed_trace.WriteSacBinary(file_name)
     print "creato il file:", file_name
     return destination_folder+str(file_name)
-
-
-
