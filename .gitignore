@@ -39,6 +39,7 @@ nosetests.xml
 *.png
 
 Tesi-data/
-direzione_arrivo*
+direzione_arrivo_16feb_files/
+direzione_arrivo_4marz_files/
 SPIERO.tgz
 
