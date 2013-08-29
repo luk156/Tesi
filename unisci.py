@@ -84,6 +84,7 @@ def generate_sac(start, stop, data_folder, destination_folder="./", file_name='d
     else: # se il file non esiste il vettore data e' composto da soli 0
         speed100 = scipy.signal.decimate( data[sagnac_index], 50 ) # se non e' stato trovato il file decimo e basta
         data_buffer = np.zeros(extra_points) # creo un buffer di zeri
+    del data
     speed100 = np.delete( speed100, range(0, diff_data_seconds*100) ) # rimuovi punti fino a start
     header = np.delete( header, range(0, diff_data_seconds ) , axis=0)
     while stop > start_data + dt.timedelta(hours = 1): # ripeto l'operazione fino a stop
@@ -102,6 +103,7 @@ def generate_sac(start, stop, data_folder, destination_folder="./", file_name='d
             speed100_1 = scipy.signal.decimate( data1, 50 ) # se non e' stato trovato il file decimo e basta
             data_buffer = np.zeros(0)
         speed100 = np.append(speed100, speed100_1)
+        del data1
     diff_data_seconds = (start_data + dt.timedelta(hours = 1) - stop).seconds
     speed100 = np.delete(speed100, range(speed100.shape[0] - diff_data_seconds*100, speed100.shape[0]) ) # rimuovi punti prima di stop
     header = np.delete(header, range(header.shape[0] - diff_data_seconds, header.shape[0]), axis=0)
@@ -113,7 +115,7 @@ def generate_sac(start, stop, data_folder, destination_folder="./", file_name='d
         file_name="G-Laser-"+str(start.year)+"_"+str(start.month)+"_"+str(start.day)+"-"+str(start.hour)+":"+str(start.minute)+"_"+str(stop.month)+"_"+str(stop.day)+"-"+str(stop.hour)+":"+str(stop.minute)
     print "writing ", file_name+"-speed"+".SAC"
     os.chdir(destination_folder)
-    speed_trace.WriteSacBinary(file_name+".SAC")
+    speed_trace.WriteSacBinary(file_name+"-speed"+".SAC")
     for h in header_sac:
         h_trace = sac.SacIO()
         #print header.shape
