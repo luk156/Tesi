@@ -46,7 +46,7 @@ def read_gyro_file(ora, data_folder, header_lenght =202, channel_array = np.arra
             header[sample][:] = raw_data[ j * data_lenght : j * data_lenght + header_lenght ]
             start_data = j * data_lenght + header_lenght
             i = 0
-            for k in range(4):
+            for k in range(channel_array.shape[0]):
                 data[k][(sample) * channel_array[k] : (sample+1) * channel_array[k] ] = raw_data[ start_data + i :  start_data + i + channel_array[k]]
                 i+=channel_array[k]
         found=True
@@ -56,7 +56,6 @@ def read_gyro_file(ora, data_folder, header_lenght =202, channel_array = np.arra
         found=False
     start_data = ora - dt.timedelta(seconds=33)
     return header, data, start_data, found
-
 
 def decimate_gyro_data(sagnac, low = 100, high = 2500, corners = 1, zerophase = True, cal = 632.8e-9/1.35/2.0/np.pi ):
     filtered_data = ob.signal.filter.bandpass( sagnac, low, high, 5000, corners = corners, zerophase = zerophase)
